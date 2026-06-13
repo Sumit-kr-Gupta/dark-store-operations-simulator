@@ -1,0 +1,57 @@
+store_id,category,max_capacity,current_stock,reorder_point,turnover_rate,below_reorder
+DS_Mumbai_Andheri,Dairy,1419,1347,354,5.5,0
+DS_Mumbai_Andheri,Fruits & Veg,2280,254,570,9.8,1
+DS_Mumbai_Andheri,Snacks,826,796,206,6.8,0
+DS_Mumbai_Andheri,Beverages,1069,265,267,4.9,1
+DS_Mumbai_Andheri,Personal Care,2063,895,515,3.9,0
+DS_Mumbai_Andheri,Staples,1278,325,319,6.2,0
+DS_Mumbai_Andheri,Frozen,1204,661,301,10.3,0
+DS_Mumbai_BKC,Dairy,1994,1139,498,7.8,0
+DS_Mumbai_BKC,Fruits & Veg,2492,1799,623,3.7,0
+DS_Mumbai_BKC,Snacks,1100,959,275,8.7,0
+DS_Mumbai_BKC,Beverages,2313,1712,578,8.2,0
+DS_Mumbai_BKC,Personal Care,1942,336,485,3.4,1
+DS_Mumbai_BKC,Staples,966,887,241,5.6,0
+DS_Mumbai_BKC,Frozen,663,304,165,10.8,0
+DS_Delhi_CP,Dairy,1278,696,319,7.1,0
+DS_Delhi_CP,Fruits & Veg,2208,967,552,4.5,0
+DS_Delhi_CP,Snacks,1227,551,306,9.0,0
+DS_Delhi_CP,Beverages,1937,1592,484,8.8,0
+DS_Delhi_CP,Personal Care,1747,1474,436,4.5,0
+DS_Delhi_CP,Staples,1993,700,498,4.5,0
+DS_Delhi_CP,Frozen,1277,679,319,11.9,0
+DS_Delhi_Lajpat,Dairy,1810,1590,452,8.0,0
+DS_Delhi_Lajpat,Fruits & Veg,1902,854,475,10.6,0
+DS_Delhi_Lajpat,Snacks,2089,322,522,5.1,1
+DS_Delhi_Lajpat,Beverages,565,468,141,5.8,0
+DS_Delhi_Lajpat,Personal Care,1048,171,262,4.9,1
+DS_Delhi_Lajpat,Staples,2431,1531,607,4.9,0
+DS_Delhi_Lajpat,Frozen,1522,962,380,11.0,0
+DS_Bangalore_Koramangala,Dairy,1816,1120,454,4.3,0
+DS_Bangalore_Koramangala,Fruits & Veg,785,330,196,9.7,0
+DS_Bangalore_Koramangala,Snacks,1603,698,400,9.7,0
+DS_Bangalore_Koramangala,Beverages,1377,1332,344,6.6,0
+DS_Bangalore_Koramangala,Personal Care,949,235,237,7.6,1
+DS_Bangalore_Koramangala,Staples,686,116,171,10.7,1
+DS_Bangalore_Koramangala,Frozen,813,723,203,4.4,0
+DS_Bangalore_Whitefield,Dairy,1893,1053,473,8.4,0
+DS_Bangalore_Whitefield,Fruits & Veg,1288,909,322,8.4,0
+DS_Bangalore_Whitefield,Snacks,1458,1228,364,5.3,0
+DS_Bangalore_Whitefield,Beverages,1633,186,408,9.1,1
+DS_Bangalore_Whitefield,Personal Care,734,622,183,9.8,0
+DS_Bangalore_Whitefield,Staples,2074,1519,518,6.1,0
+DS_Bangalore_Whitefield,Frozen,1101,555,275,4.4,0
+DS_Hyderabad_Hitech,Dairy,506,419,126,10.9,0
+DS_Hyderabad_Hitech,Fruits & Veg,1039,615,259,9.9,0
+DS_Hyderabad_Hitech,Snacks,1539,370,384,10.8,1
+DS_Hyderabad_Hitech,Beverages,1111,972,277,8.8,0
+DS_Hyderabad_Hitech,Personal Care,1747,581,436,4.4,0
+DS_Hyderabad_Hitech,Staples,2061,536,515,7.9,0
+DS_Hyderabad_Hitech,Frozen,2094,1295,523,11.3,0
+DS_Pune_Kothrud,Dairy,1726,835,431,7.4,0
+DS_Pune_Kothrud,Fruits & Veg,729,443,182,10.9,0
+DS_Pune_Kothrud,Snacks,2203,1872,550,5.8,0
+DS_Pune_Kothrud,Beverages,618,307,154,10.9,0
+DS_Pune_Kothrud,Personal Care,2439,565,609,3.8,1
+DS_Pune_Kothrud,Staples,1495,290,373,11.8,1
+DS_Pune_Kothrud,Frozen,1590,416,397,4.2,0
