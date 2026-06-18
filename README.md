@@ -1,10 +1,10 @@
-# 🚀 Dark Store Operations Simulator
+#  Dark Store Operations Simulator
 
 **Designed an end-to-end operations analytics framework using Excel, SQL, and Python to evaluate fulfillment efficiency, inventory health, stockout risk, and store performance across an 8-store quick-commerce network — surfacing ₹14.7L+ in revenue at risk from stockout-driven order cancellations.**
 
 ---
 
-## 📌 Business Problem
+##  Business Problem
 
 Quick-commerce dark stores operate on razor-thin SLA windows — typically 10–30 minutes — where every minute of delay directly translates to customer churn, order cancellations, and lost revenue. At scale, operational inefficiencies compound: peak-hour surges overwhelm pick stations, stockouts cascade into cancellations, and underperforming stores drag down network-wide NPS.
 
@@ -19,7 +19,7 @@ This project is inspired by operational analytics challenges commonly seen in qu
 **Customer Perspective:** Customers experiencing SLA breaches reported materially lower ratings than customers receiving on-time deliveries. This 1.3-point rating gap may negatively impact customer retention and repeat purchase behavior. This 1.3-point rating gap may negatively impact customer retention and repeat purchase behavior.
 ---
 
-## 🎯 Project Objectives
+##  Project Objectives
 
 1. Quantify fulfillment performance across 8 dark stores and 5 cities
 2. Identify SLA breach drivers — peak hour, category, and store level
@@ -34,7 +34,7 @@ This project is inspired by operational analytics challenges commonly seen in qu
 
 ---
 
-## 🗂 Dataset Overview
+##  Dataset Overview
 
 | Dataset | Rows | Description | Use Case |
 |---|---|---|---|
@@ -80,7 +80,7 @@ This project uses a simulated quick-commerce operations dataset designed for ana
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 ![Excel](https://img.shields.io/badge/Excel-217346?style=for-the-badge&logo=microsoft-excel&logoColor=white)
 ![SQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
@@ -97,7 +97,7 @@ This project uses a simulated quick-commerce operations dataset designed for ana
 
 ---
 
-## 📊 Excel Analysis
+##  Excel Analysis
 
 ### Sheet: KPI
 **Purpose:** Network-wide summary KPIs for executive review.
@@ -189,7 +189,7 @@ This project uses a simulated quick-commerce operations dataset designed for ana
 
 ---
 
-## 🗄 SQL Analysis
+##  SQL Analysis
 
 All 20+ queries are available in `/sql/dark_store_queries.sql`.
 
@@ -262,7 +262,7 @@ Excel pivot tables require manual refresh, cannot join tables, and break on data
 
 ---
 
-## 🐍 Python Analysis
+##  Python Analysis
 
 Three notebooks are available in `/notebooks/`.
 
@@ -304,7 +304,7 @@ At the current average of ~68.5 orders per store per day, a 20% increase project
 
 ---
 
-## 📈 Core Operations KPIs
+##  Core Operations KPIs
 
 | KPI | Value | Formula | Benchmark | Executive Use Case |
 |---|---|---|---|---|
@@ -321,7 +321,7 @@ At the current average of ~68.5 orders per store per day, a 20% increase project
 
 ---
 
-## 🏪 Store Performance Analysis
+##  Store Performance Analysis
 
 **Best Performing Store:** DS_Hyderabad_Hitech
 - Lowest SLA breach rate: 62.4%
@@ -343,7 +343,7 @@ At the current average of ~68.5 orders per store per day, a 20% increase project
 
 ---
 
-## 📦 Inventory Analysis
+##  Inventory Analysis
 
 **Network-wide stock summary:**
 - Total SKUs tracked: 56 (8 stores × 7 categories)
@@ -361,7 +361,7 @@ At the current average of ~68.5 orders per store per day, a 20% increase project
 
 ---
 
-## 📊 Tableau Dashboard
+##  Tableau Dashboard
 
 Tableau dashboard is currently under development.
 
@@ -372,15 +372,13 @@ Planned dashboards:
 - **Peak Hour Performance Chart** — hourly SLA breach rate trend
 - **City Revenue Map** — geographic revenue distribution
 
-📸 *Screenshot placeholders — to be updated upon Tableau completion*
-
 `[Screenshot: Network KPI Dashboard]`
 `[Screenshot: Store Risk Matrix]`
 `[Screenshot: Inventory Heatmap]`
 
 ---
 
-## 🔍 Key Insights
+##  Key Insights
 
 **HIGH IMPACT**
 
@@ -420,7 +418,7 @@ Planned dashboards:
 
 ---
 
-## 💡 Strategic Recommendations
+##  Strategic Recommendations
 
 | # | Action | Expected Impact | Owner | Priority | Risk |
 |---|---|---|---|---|---|
@@ -435,7 +433,7 @@ Planned dashboards:
 
 ---
 
-## 🚀 Operations Improvement Roadmap
+##  Operations Improvement Roadmap
 
 ### Short-Term (0–3 Months)
 - Emergency reorder of 11 critical store-category SKUs
@@ -457,7 +455,7 @@ Potential future enhancement: ML-based demand forecasting to identify elevated s
 
 ---
 
-## 📂 Repository Structure
+##  Repository Structure
 
 ```
 dark-store-ops-simulator/
