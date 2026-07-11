@@ -397,3 +397,4 @@ Open `excel/Dark_Store_Operations_Simulator.xlsx` directly; no setup required.
 This project treats "analysis" as a discipline with a burden of proof, not a set of charts. Every headline number here is validated before it's trusted, every recommendation is costed, and one recommendation is explicitly *not* funded at full scale because the ROI math doesn't support it yet. That's the operating standard the project is built to demonstrate.
 
 ---
+*Author: Sumit Kumar Gupta*
