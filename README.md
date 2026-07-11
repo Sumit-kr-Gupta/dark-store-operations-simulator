@@ -35,7 +35,6 @@
 26. [Screenshots](#26-screenshots)
 27. [How to Run This Project](#27-how-to-run-this-project)
 28. [Conclusion](#28-conclusion)
-29. [Relevant Roles](#29-relevant-roles)
 
 ---
 
@@ -398,17 +397,3 @@ Open `excel/Dark_Store_Operations_Simulator.xlsx` directly; no setup required.
 This project treats "analysis" as a discipline with a burden of proof, not a set of charts. Every headline number here is validated before it's trusted, every recommendation is costed, and one recommendation is explicitly *not* funded at full scale because the ROI math doesn't support it yet. That's the operating standard the project is built to demonstrate.
 
 ---
-
-## 29. Relevant Roles
-
-This project's structure naturally maps to several functions, without being built to chase any one of them:
-
-- **Business Analysis / BI:** the SQL diagnostic layer, KPI framework, and Excel stakeholder reporting reflect standard BA/BI deliverables end to end.
-- **Operations Analytics:** root-cause diagnosis, bottleneck identification, and capacity/staffing modeling are the core of the project.
-- **Strategy & Operations / Founder's Office:** the scenario stress-test, costed recommendation engine, and willingness to reject a low-ROI lever mirror how a strategy or founder's-office analyst is expected to protect capital allocation.
-- **Consulting:** the validate → diagnose → recommend structure, explicit assumptions, and executive-summary framing follow a standard consulting deliverable pattern.
-- **Data Analytics:** the statistical rigor (chi-square testing, logistic regression, predictive modeling) sits underneath every business claim in the project.
-
----
-
-*Questions, feedback, or interested in a walkthrough? Open an issue or reach out — happy to talk through any part of the methodology.*
