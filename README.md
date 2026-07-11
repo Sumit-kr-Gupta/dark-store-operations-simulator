@@ -1,498 +1,414 @@
-#  Dark Store Operations Simulator
+# Dark Store Operations Simulator
 
-**Designed an end-to-end operations analytics framework using Excel, SQL, and Python to evaluate fulfillment efficiency, inventory health, stockout risk, and store performance across an 8-store quick-commerce network — surfacing ₹14.7L+ in revenue at risk from stockout-driven order cancellations.**
+**A full-stack operations analytics project analyzing 25,000 orders across an 8-store, 5-city quick-commerce dark store network — SQL for diagnosis, Python for statistical validation, Excel for stakeholder reporting.**
 
----
-
-##  Business Problem
-
-Quick-commerce dark stores operate on razor-thin SLA windows — typically 10–30 minutes — where every minute of delay directly translates to customer churn, order cancellations, and lost revenue. At scale, operational inefficiencies compound: peak-hour surges overwhelm pick stations, stockouts cascade into cancellations, and underperforming stores drag down network-wide NPS.
-
-This project is inspired by operational analytics challenges commonly seen in quick-commerce businesses such as Blinkit, Zepto, and Swiggy Instamart to identify where fulfillment processes break down and quantify the resulting operational and financial impact.
-**CEO Perspective:** 62.8% SLA breach rate means nearly 2 in 3 orders are late. At 25,000 orders and ₹966 AOV, that is a structural customer experience problem — indicating a structural operational challenge rather than an isolated staffing issue.
-
-**Operations Head Perspective:** Pick time averages 7.5 minutes out of a 30-minute SLA. This is one of the most important operational intervention points across the network because it is directly controllable at the store level.
-**Supply Chain Perspective:** 11 of 56 store-category combinations are below reorder point. Personal Care and Staples show the most critical stock exposure across 4 stores each.
-
-**Store Manager Perspective:** DS_Mumbai_Andheri has the highest SLA breach rate (63.4%) and the highest average fulfillment time (32.9 min) — both above network average — making it a priority candidate for operational intervention.
-
-**Customer Perspective:** Customers experiencing SLA breaches reported materially lower ratings than customers receiving on-time deliveries. This 1.3-point rating gap may negatively impact customer retention and repeat purchase behavior. This 1.3-point rating gap may negatively impact customer retention and repeat purchase behavior.
----
-
-##  Project Objectives
-
-1. Quantify fulfillment performance across 8 dark stores and 5 cities
-2. Identify SLA breach drivers — peak hour, category, and store level
-3. Calculate revenue at risk from stockouts and cancellations
-4. Rank stores by composite operational risk score
-5. Profile inventory health across all 56 store-category combinations
-6. Analyze customer experience impact of SLA failures
-7. Benchmark fulfillment time by stage (pick, pack, dispatch, delivery)
-8. Simulate demand growth impact on current infrastructure capacity
-9. Provide store-specific, category-specific, actionable recommendations
-10. Build an executive-ready KPI dashboard for leadership decision-making
+> SLA breach 62.8% → root-caused to peak-hour demand (not store mismanagement) → costed, ROI-tested recommendations, including one that was rejected for negative ROI.
 
 ---
 
-##  Dataset Overview
+## Table of Contents
+1. [Executive Summary](#1-executive-summary)
+2. [Business Problem](#2-business-problem)
+3. [Business Context](#3-business-context)
+4. [Operations Context](#4-operations-context)
+5. [Objectives](#5-objectives)
+6. [Key Business Questions](#6-key-business-questions)
+7. [Dataset Overview](#7-dataset-overview)
+8. [Data Architecture](#8-data-architecture)
+9. [Technology Stack](#9-technology-stack)
+10. [SQL Analysis](#10-sql-analysis)
+11. [Python Analysis](#11-python-analysis)
+12. [Excel Dashboard](#12-excel-dashboard)
+13. [Tableau Dashboard](#13-tableau-dashboard)
+14. [Operational KPI Framework](#14-operational-kpi-framework)
+15. [Analytical Methodology](#15-analytical-methodology)
+16. [Business Insights](#16-business-insights)
+17. [Operational Bottlenecks](#17-operational-bottlenecks)
+18. [Executive Recommendations](#18-executive-recommendations)
+19. [Operational Impact](#19-operational-impact)
+20. [Business Value](#20-business-value)
+21. [Folder Structure](#21-folder-structure)
+22. [Repository Structure Notes](#22-repository-structure-notes)
+23. [Key Skills Demonstrated](#23-key-skills-demonstrated)
+24. [Challenges & Assumptions](#24-challenges--assumptions)
+25. [Future Enhancements](#25-future-enhancements)
+26. [Screenshots](#26-screenshots)
+27. [How to Run This Project](#27-how-to-run-this-project)
+28. [Conclusion](#28-conclusion)
+29. [Relevant Roles](#29-relevant-roles)
 
-| Dataset | Rows | Description | Use Case |
-|---|---|---|---|
-| orders | 25,000 | Transaction-level order data across 8 stores, 7 categories, 5 cities | SLA analysis, revenue analysis, peak-hour study, store ranking |
-| inventory | 56 | One row per store-category combination with stock levels and reorder status | Inventory risk ranking, stockout root cause, replenishment planning |
-
-**Orders dataset** contains 19 columns spanning store ID, city, product category, order timestamp, day of week, hour, peak-hour flag, pick/pack/dispatch/delivery times in minutes, total fulfillment time, SLA breached flag, stockout flag, cancellation flag, revenue in INR, item count, and customer rating.
-
-**Inventory dataset** contains current stock, maximum capacity, reorder point, daily turnover rate, and a binary below-reorder flag for each store-category pair — enabling stock risk prioritization without requiring real-time data feeds.
-
-## Data Source 
-This project uses a simulated quick-commerce operations dataset designed for analytics and portfolio development purposes. The dataset models order fulfillment, inventory management, customer experience, and operational performance across a multi-city dark-store network.
 ---
 
-## 📖 Data Dictionary
+## 1. Executive Summary
 
-| Variable | Definition | Business Importance |
+This project simulates one year of operations for a quick-commerce dark store network — 8 stores across 5 Indian cities, 25,000 orders, ₹2.42 crore in revenue — and asks the questions a COO or Head of Operations would actually ask: *where is the network losing money, why, and what should we fund first?*
+
+The headline finding is not "some stores underperform." It is that a network-wide, chi-square-tested analysis (p > 0.4 across all 8 stores) shows SLA breach is a **peak-hour demand problem**, not a store-management problem — peak-hour orders breach the 30-minute SLA at 95.2% versus 42.4% off-peak, and `is_peak_hour` carries roughly 150x the standardized effect on SLA breach of any store-level staffing variable (logistic regression, ROC-AUC 0.77). That single reframe changes the recommended fix from "coach the underperforming store managers" to "solve peak-hour capacity network-wide."
+
+The project also does something most portfolio projects avoid: it reports a **negative result**. A costed staffing-investment business case (₹45 lakh/year) returns a return on investment of roughly -100% under conservative, transaction-only revenue accounting, so the recommendation is a two-store pilot, not a network rollout — while a ₹94,240 one-time inventory buffer investment, covering all 11 below-reorder store-category gaps, shows a clean +178.9% ROI with a 4.3-month payback and is recommended for immediate approval. Being willing to say "this lever isn't proven yet" is the difference between an analyst who produces charts and one who protects a P&L.
+
+**Scale:** 25,000 orders · 8 stores · 5 cities · ₹24,162,205 in revenue analyzed
+**Core findings:** 62.8% SLA breach rate · 15.2% stockout rate · 6.1% cancellation rate · 61.3% of revenue attached to a degraded (breached/stockout) order experience
+**Deliverables:** 900+ line diagnostic SQL codebase (12 sections, 4 production views) · 3 Python notebooks covering EDA, root-cause statistics, and executive scenario modeling · a stakeholder-ready Excel workbook · a Tableau dashboard (in progress)
+
+---
+
+## 2. Business Problem
+
+Quick-commerce economics depend on one operational promise: delivery within a committed SLA window (30 minutes in this network). Every SLA breach, stockout, or cancellation is a customer-trust event with a direct revenue consequence — and at scale, small per-order failure rates compound into a material share of network revenue.
+
+At the point this analysis begins, the network is failing that promise on a majority of orders (62.8% SLA breach), and leadership does not yet know whether this is a *store execution* problem, a *demand/staffing* problem, or an *inventory* problem — three failure modes that call for three completely different capital allocations. Spending on the wrong lever is expensive and slow to reverse.
+
+**The business problem this project solves:** diagnose the true root cause of service failure across the network, quantify its revenue impact precisely enough to defend in front of finance, and produce a prioritized, costed investment plan — including telling leadership which levers are *not* yet worth funding.
+
+---
+
+## 3. Business Context
+
+Dark stores are small, hyper-local fulfillment centers designed for 10–30 minute delivery, unlike traditional retail or e-commerce warehouses optimized for cost-per-unit over multi-day windows. That compresses the entire order lifecycle — picking, packing, dispatch, delivery — into a window where a few minutes of delay is the difference between a met SLA and a lost order.
+
+This compression also concentrates operational risk: a stockout that a traditional e-commerce business absorbs by backordering becomes an immediate cancellation in dark store retail, and a staffing shortfall during a demand spike shows up in customer ratings within the hour, not the week. The network modeled here reflects that reality — 5 Indian metro markets, 8 stores, multiple product categories (Staples, Personal Care, and others), and order-level operational telemetry (fulfillment time, SLA breach, stockout, cancellation, customer rating) for every one of 25,000 orders.
+
+---
+
+## 4. Operations Context
+
+The simulated network runs a standard dark store fulfillment pipeline: **order placed → picked → packed → dispatched → delivered**, with each stage timestamped. Two structural constraints shape performance:
+
+- **Peak-hour demand is not evenly distributed.** Order volume spikes at predictable windows, and staffing/inventory capacity does not automatically scale with it — this is the single largest driver of SLA failure identified in the analysis.
+- **Inventory is store-local, not pooled.** Each store carries its own stock against its own reorder point, so a stockout in one store's Personal Care aisle is invisible to, and unsolvable by, inventory sitting in another store's warehouse.
+
+Both constraints are treated as operational levers throughout the analysis (staffing allocation, inventory buffer sizing) rather than as background facts — every recommendation in this project is tied to one of them.
+
+---
+
+## 5. Objectives
+
+1. Establish a trustworthy, validated single source of truth for network performance (data quality checks before any KPI is trusted).
+2. Diagnose the true root cause of SLA breaches, stockouts, and cancellations — statistically, not anecdotally.
+3. Quantify revenue impact precisely enough to separate revenue *fully lost* from revenue merely *at risk*.
+4. Rank stores and store-category combinations by investment priority using an evidence-derived (not assumed) weighting scheme.
+5. Stress-test the network against a +20% / −20% demand scenario to evaluate capacity readiness for growth.
+6. Produce a costed, ROI-tested set of executive recommendations — approving what has positive ROI, piloting what doesn't yet, and flagging data gaps that block certainty.
+
+---
+
+## 6. Key Business Questions
+
+| # | Question | Answered In |
 |---|---|---|
-| order_id | Unique order identifier | Primary key for transaction tracking and audit |
-| store_id | Dark store location code (e.g. DS_Mumbai_Andheri) | Store-level performance segmentation |
-| city | City where order was placed | City-level resource and inventory planning |
-| category | Product category (Dairy, Snacks, Frozen, Beverages, Fruits & Veg, Personal Care, Staples) | Category-level stockout and SLA analysis |
-| order_timestamp | Date and time of order placement | Time-series trend analysis, peak hour identification |
-| day_of_week | Day name (Monday–Sunday) | Day-of-week demand planning |
-| order_hour | Hour of order (0–23) | Hourly staffing and capacity planning |
-| is_peak_hour | Binary flag: 1 = peak hour, 0 = off-peak | Peak vs. off-peak performance comparison |
-| pick_time_min | Time to pick items from shelf (minutes) | Largest fulfillment bottleneck — avg 7.5 min |
-| pack_time_min | Time to pack the order (minutes) | Secondary process efficiency metric |
-| dispatch_time_min | Time between packing and handing to rider (minutes) | Handoff efficiency metric |
-| delivery_time_min | Time from dispatch to customer door (minutes) | Last-mile performance indicator |
-| total_fulfillment_time_min | Sum of all four stages (minutes) | Primary SLA compliance metric — avg 32.85 min |
-| sla_breached | Binary: 1 = delivered beyond SLA threshold | Core operational KPI — 62.8% breach rate |
-| stockout_flag | Binary: 1 = item was out of stock during order | Inventory failure indicator — 15.2% rate |
-| cancelled_flag | Binary: 1 = order was cancelled | Revenue destruction metric — 6.1% rate |
-| revenue_inr | Order revenue in Indian Rupees | Financial impact quantification |
-| items_count | Number of items in the order | Basket size for complexity analysis |
-| customer_rating | Post-delivery rating (1–5) | Customer experience outcome metric |
-| current_stock | Units currently in inventory at store | Real-time stock health |
-| max_capacity | Maximum storage capacity for category at store | Utilization rate calculation |
-| reorder_point | Minimum stock level before reorder trigger | Replenishment planning threshold |
-| turnover_rate | Daily sales velocity for category at store | Inventory efficiency and depletion rate |
-| below_reorder | Binary: 1 = current stock below reorder point | Immediate replenishment flag |
+| 1 | Is the data clean and trustworthy enough to drive executive decisions? | SQL Section 1, Notebook 1 §4 |
+| 2 | What does network health look like at a glance? | SQL Section 2, Notebook 3 §2 |
+| 3 | Which cities, categories, and stores drive revenue — and which drive risk? | SQL Sections 3–4, Notebook 1 §8 |
+| 4 | Which store-category combinations are at active stockout risk? | SQL Section 5, Notebook 1 §8.6 |
+| 5 | How much revenue is *fully lost* vs. merely *at risk*? | SQL Section 6, Notebook 2 §9 |
+| 6 | Is SLA failure a store problem or a peak-hour demand problem? | SQL Section 7, Notebook 2 §6–7 |
+| 7 | What does it actually cost to serve each store, and which stores are profitable after operational cost is accounted for? | SQL Section 8 |
+| 8 | Which stores are statistically high-risk, and is that risk real or noise? | SQL Section 9, Notebook 2 §6 |
+| 9 | Can the network absorb 20% demand growth without new investment? | SQL Section 10, Notebook 3 §7–8 |
+| 10 | What should leadership fund first, and what is the return on each option? | SQL Section 11, Notebook 2 §12, Notebook 3 §11 |
 
 ---
 
-##  Tech Stack
+## 7. Dataset Overview
 
-![Excel](https://img.shields.io/badge/Excel-217346?style=for-the-badge&logo=microsoft-excel&logoColor=white)
-![SQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+The core relational dataset simulates one year of dark store operations:
 
-**Excel** — Business KPI dashboard, store scorecard, city and category pivot analysis, inventory risk matrix. Purpose: structured operational reporting for non-technical stakeholders. Business value: enables store managers and operations leads to monitor KPIs without SQL or code access.
-
-**SQL (MySQL)** — 20+ operational queries covering revenue loss from stockouts, peak-hour SLA analysis, store risk ranking, inventory diagnostic joins, and executive KPI rollups. Purpose: scalable, repeatable analysis on structured transactional data. Business value: enables data teams to refresh analysis on any new data load without manual Excel work.
-
-**Python (Pandas, NumPy, Matplotlib, Seaborn)** — EDA, fulfillment stage time breakdown, composite risk scoring, scenario demand analysis, executive recommendation engine. Purpose: advanced pattern recognition and business logic that requires programmatic flexibility. Business value: risk scoring, scenario simulation, and automated insight generation at scale.
-
-**GitHub** — Version control, portfolio presentation, and recruiter-accessible documentation. Business value: demonstrates professional code management and project reproducibility.
-
----
-
-##  Excel Analysis
-
-### Sheet: KPI
-**Purpose:** Network-wide summary KPIs for executive review.
-**Business Question:** What is the current operational health of the dark store network?
-**Methodology:** Direct formula aggregation from raw Orders data using SUM, COUNT, AVERAGE, and percentage formulas.
-**KPIs:**
-- Total Orders: 25,000
-- Total Revenue: ₹2.42 Cr (₹2,41,62,205)
-- Average Order Value: ₹966.49
-- SLA Breach %: 62.8%
-- Stockout %: 15.2%
-- Cancellation %: 6.1%
-- Average Customer Rating: 3.89 / 5.0
-
-### Sheet: Store Performance
-**Purpose:** Revenue, order volume, customer rating, and fulfillment time by store — in two pivot views.
-**Business Question:** Which stores generate the most revenue and which have the worst fulfillment performance?
-**Methodology:** Pivot table with SUM, COUNT, and AVERAGE across store_id dimension. Secondary pivot adds category-level stockout and SLA breakdown.
-**Key Insight:** Revenue is distributed relatively evenly across all 8 stores (₹29.3L–₹30.7L range), suggesting operational performance differences are not primarily driven by volume concentration.
-
-### Sheet: Store_Scorecard
-**Purpose:** Full operational risk matrix for each store — the single-view decision tool for Operations Head.
-**Business Question:** How does each store perform across all five operational KPIs simultaneously?
-**Methodology:** Pivot table + supplementary pivot showing peak-hour vs. off-peak SLA breach comparison (peak: 95.2% breach rate vs. off-peak: 42.4%).
-
-| Store | Orders | Revenue | SLA Breach % | Stockout % | Cancel % | Avg Rating |
-|---|---|---|---|---|---|---|
-| DS_Bangalore_Koramangala | 3,129 | ₹30.29L | 62.9% | 14.4% | 5.5% | 3.90 |
-| DS_Bangalore_Whitefield | 3,049 | ₹29.32L | 62.2% | 15.4% | 6.3% | 3.89 |
-| DS_Delhi_CP | 3,124 | ₹30.03L | 62.9% | 15.3% | 5.7% | 3.88 |
-| DS_Delhi_Lajpat | 3,136 | ₹30.17L | 62.7% | 15.4% | 6.0% | 3.89 |
-| DS_Hyderabad_Hitech | 3,107 | ₹30.11L | 62.4% | 14.4% | 5.7% | 3.89 |
-| DS_Mumbai_Andheri | 3,112 | ₹30.72L | 63.4% | 15.5% | 6.3% | 3.88 |
-| DS_Mumbai_BKC | 3,100 | ₹29.99L | 63.0% | 15.2% | 6.5% | 3.88 |
-| DS_Pune_Kothrud | 3,243 | ₹30.97L | 63.1% | 15.8% | 6.6% | 3.88 |
-
-**Insight:** DS_Pune_Kothrud has the worst cancellation rate (6.6%) and highest stockout rate (15.8%). DS_Mumbai_Andheri has the highest SLA breach rate (63.4%). DS_Hyderabad_Hitech is the relative best performer on both SLA (62.4%) and stockout (14.4%).
-
-### Sheet: City Analysis
-**Purpose:** City-level revenue, order volume, and customer rating summary.
-**Business Question:** Which cities drive the most revenue and where should we prioritize inventory?
-
-| City | Orders | Revenue | Avg Rating |
-|---|---|---|---|
-| Mumbai | 6,212 | ₹60.72L | 3.88 |
-| Delhi | 6,260 | ₹60.21L | 3.89 |
-| Bangalore | 6,178 | ₹59.61L | 3.89 |
-| Pune | 3,243 | ₹30.97L | 3.88 |
-| Hyderabad | 3,107 | ₹30.11L | 3.89 |
-
-**Key Insight:** Mumbai and Delhi together account for ₹1.21 Cr (50.1%) of total network revenue — highest priority cities for inventory and staffing investment.
-
-### Sheet: Category Analysis
-**Purpose:** Stockout rate and SLA breach rate by product category.
-**Business Question:** Which categories are most operationally vulnerable?
-
-| Category | Orders | Revenue | Stockout % | SLA Breach % |
-|---|---|---|---|---|
-| Personal Care | 3,587 | ₹34.88L | 15.7% | 63.5% |
-| Fruits & Veg | 3,545 | ₹34.49L | 15.4% | 62.2% |
-| Frozen | 3,581 | ₹34.41L | 15.4% | 63.6% |
-| Beverages | 3,495 | ₹33.71L | 14.5% | 63.7% |
-| Snacks | 3,542 | ₹34.59L | 15.1% | 61.7% |
-| Dairy | 3,577 | ₹34.24L | 15.1% | 62.7% |
-| Staples | 3,673 | ₹35.30L | 15.1% | 62.4% |
-
-**Key Insight:** Personal Care has the highest stockout rate (15.7%) with 4 stores flagged below reorder point. Frozen has the second-highest SLA breach rate (63.6%). Beverages has the worst combined SLA and stockout combination.
-
-### Sheet: Inventory Analysis
-**Purpose:** Store-category stock health, turnover rates, and critical replenishment flags.
-**Business Question:** Which store-category combinations are at immediate stockout risk?
-
-**11 store-category combinations are currently below reorder point:**
-
-| Store | Critical Categories | Avg Turnover Rate |
+| Table | Grain | Key Fields |
 |---|---|---|
-| DS_Pune_Kothrud | 2 (Personal Care, Staples) | 7.83 |
-| DS_Mumbai_Andheri | 2 (Fruits & Veg, Beverages) | 6.77 |
-| DS_Bangalore_Koramangala | 2 (Personal Care, Staples) | 7.57 |
-| DS_Delhi_Lajpat | 2 (Snacks, Personal Care) | 7.19 |
-| DS_Bangalore_Whitefield | 1 (Beverages) | 7.36 |
-| DS_Mumbai_BKC | 1 (Personal Care) | 6.89 |
-| DS_Hyderabad_Hitech | 1 (Snacks) | 9.14 |
-| DS_Delhi_CP | 0 | 7.19 |
+| `orders` | 1 row per order (25,000 rows) | `order_id`, `store_id`, `city`, `category`, `revenue_inr`, `order_timestamp`, `is_peak_hour`, `sla_breached`, `stockout_flag`, `cancelled_flag`, `customer_rating`, `total_fulfillment_time_min`, `pick_time_min`, `pack_time_min`, `dispatch_time_min` |
+| `inventory` | 1 row per store-category | `store_id`, `category`, `current_stock`, `max_capacity`, `below_reorder` |
+| `deliveries` | 1 row per delivery | `order_id`, `distance_km`, delivery-stage timing (used as an independent cross-check on SLA drivers) |
 
-**Most exposed category by stock count across network:**
-- Personal Care: 4,879 total units across network, 4 stores below reorder
-- Beverages: 6,834 units but 2 stores critical
+Full field-level definitions, types, and business meaning are documented in [`docs/Data_Dictionary.md`](docs/Data_Dictionary.md).
 
 ---
 
-##  SQL Analysis
-
-All 20+ queries are available in `/sql/dark_store_queries.sql`.
-
-### Top Interview-Ready Queries
-
-**1. Revenue Lost Due to Stockouts**
-```sql
-SELECT 
-  ROUND(SUM(revenue_inr), 0) AS revenue_lost,
-  ROUND(SUM(revenue_inr)*100/(SELECT SUM(revenue_inr) FROM orders), 2) AS revenue_loss_pct
-FROM orders
-WHERE stockout_flag = 1 AND cancelled_flag = 1;
-```
-*Business Value:* Quantifies exact INR impact of inventory failure. Connects supply chain KPIs directly to P&L. This metric directly connects operational failures to financial impact.
-
-**2. Peak Hour Stress Analysis (CASE WHEN)**
-```sql
-SELECT 
-  CASE WHEN is_peak_hour = 1 THEN 'Peak Hour' ELSE 'Off Peak' END AS period,
-  COUNT(*) AS orders,
-  ROUND(AVG(total_fulfillment_time_min), 2) AS avg_time,
-  ROUND(AVG(sla_breached)*100, 1) AS sla_pct,
-  ROUND(AVG(stockout_flag)*100, 1) AS stockout_pct
-FROM orders 
-GROUP BY period;
-```
-*Business Value:* Isolates peak-hour as the primary SLA failure driver. Justifies targeted staffing investment during specific windows rather than blanket headcount increases.
-
-**3. Diagnostic Analytics (JOIN across two tables)**
-```sql
-SELECT 
-  o.store_id, o.category,
-  ROUND(AVG(o.stockout_flag)*100, 1) AS stockout_pct,
-  i.current_stock, i.max_capacity, i.below_reorder
-FROM orders o
-JOIN inventory i ON o.store_id = i.store_id AND o.category = i.category
-GROUP BY o.store_id, o.category, i.current_stock, i.max_capacity, i.below_reorder
-ORDER BY stockout_pct DESC;
-```
-*Business Value:* Connects order-level stockout incidents to actual inventory positions. Enables root cause analysis — is stockout driven by low stock or high demand velocity?A key diagnostic query within the project that links operational outcomes with inventory conditions. .
-
-**4. Composite Store Risk Ranking**
-```sql
-SELECT store_id,
-  AVG(sla_breached)*100 AS breach_pct,
-  AVG(stockout_flag)*100 AS stockout_pct,
-  AVG(cancelled_flag)*100 AS cancel_pct
-FROM orders 
-GROUP BY store_id
-ORDER BY breach_pct DESC;
-```
-*Business Value:* Multi-dimensional store ranking that Operations Head can use to prioritize site visits and intervention resources.
-
-**5. Executive KPI Dashboard**
-```sql
-SELECT 
-  COUNT(*) AS total_orders,
-  SUM(revenue_inr) AS total_revenue,
-  AVG(revenue_inr) AS avg_order_value,
-  AVG(sla_breached)*100 AS sla_pct,
-  AVG(stockout_flag)*100 AS stockout_pct,
-  AVG(cancelled_flag)*100 AS cancel_pct,
-  AVG(customer_rating) AS avg_rating
-FROM orders;
-```
-*Business Value:* Single-query network health check. Can be scheduled as a daily automated report.
-
-**Why SQL over Excel for this analysis?**
-Excel pivot tables require manual refresh, cannot join tables, and break on datasets above ~100K rows. SQL provides: (1) repeatable logic on any data load, (2) multi-table joins that Excel cannot perform, (3) parameterisable queries for dynamic date ranges, and (4) a foundation for BI tool connections.
-
----
-
-##  Python Analysis
-
-Three notebooks are available in `/notebooks/`.
-
-### Notebook 1: EDA & Business Health
-**Libraries used:** pandas, numpy, matplotlib, seaborn
-
-Key analyses:
-- Revenue distribution across stores and categories — confirms near-equal distribution, ruling out volume concentration as a risk factor
-- Fulfillment time stage breakdown: Pick (7.5 min avg) → Pack (3.0 min) → Dispatch (2.0 min) → Delivery (20.3 min). Delivery dominates total time (62% of fulfillment), but pick time is the only stage within direct store control.
-- SLA breach vs. customer rating: Orders breaching SLA average 3.2/5 vs. 4.5/5 for on-time orders. The observed 1.3-point rating gap suggests a meaningful relationship between fulfillment reliability and customer satisfaction.
-- Cancellation patterns by category and store
-
-### Notebook 2: Operations Analytics
-**Key output: Composite Store Risk Score**
-
-Risk Score = (SLA Breach % × 50) + (Stockout % × 30) + (Cancellation % × 20)
-
-Weight justification:
-- SLA breach carries 50% weight because it directly impacts customer rating and retention
-- Stockout carries 30% weight because it drives both cancellations and lost revenue
-- Cancellation carries 20% weight because it is a downstream outcome, partially captured by the other two metrics
-
-Store risk ranking by composite score:
-1. DS_Pune_Kothrud — highest stockout (15.8%) + highest cancel rate (6.6%)
-2. DS_Mumbai_Andheri — highest SLA breach (63.4%) + above-average stockout (15.5%)
-3. DS_Mumbai_BKC — highest cancellation rate (6.5%) + SLA breach at 63.0%
-4. DS_Bangalore_Koramangala — slightly above average on all three metrics
-5. DS_Hyderabad_Hitech — relative best performer across all three dimensions
-
-### Notebook 3: Executive Insights & Scenario Analysis
-**Scenario: 20% Demand Growth**
-
-At the current average of ~68.5 orders per store per day, a 20% increase projects to ~82 orders per store per day across the network. Given that peak-hour SLA breach already reaches 95.2% at current volume, DS_Mumbai_Andheri and DS_Pune_Kothrud would likely experience additional SLA pressure under higher order volumes without corresponding fulfillment capacity expansion.
-1. Immediate: Reorder Personal Care at DS_Pune_Kothrud, DS_Bangalore_Koramangala, DS_Delhi_Lajpat, DS_Mumbai_BKC
-2. Immediate: Reorder Beverages at DS_Mumbai_Andheri and DS_Bangalore_Whitefield
-3. Short-term: Add dedicated picker during peak hours at DS_Mumbai_Andheri (63.4% SLA breach)
-4. Short-term: Investigate Frozen category SLA breach (63.6% — highest in network)
-5. Strategic: DS_Pune_Kothrud requires operational audit before any demand growth is absorbed
-
----
-
-##  Core Operations KPIs
-
-| KPI | Value | Formula | Benchmark | Executive Use Case |
-|---|---|---|---|---|
-| Total Orders | 25,000 | COUNT(order_id) | Scale baseline | Network capacity planning |
-| Total Revenue | ₹2.42 Cr | SUM(revenue_inr) | P&L baseline | Financial performance tracking |
-| Average Order Value | ₹966 | SUM(revenue) / COUNT(orders) | Q-commerce: ₹400–₹1,200 | Basket optimization |
-| SLA Breach % | 62.8% | SUM(sla_breached) / COUNT(orders) | Target: <20% | Primary operational health metric |
-| Stockout % | 15.2% | SUM(stockout_flag) / COUNT(orders) | Target: <5% | Inventory planning KPI |
-| Cancellation % | 6.1% | SUM(cancelled_flag) / COUNT(orders) | Target: <3% | Customer experience / revenue leak |
-| Avg Customer Rating | 3.89 / 5 | AVG(customer_rating) | Target: >4.2 | NPS proxy |
-| Peak Hour SLA Breach | 95.2% | SUM(sla_breached WHERE peak=1) / COUNT | Compared to off-peak 42.4% | Staffing prioritization |
-| Fulfillment Time | 32.85 min avg | AVG(total_fulfillment_time_min) | 30-min SLA | SLA compliance driver |
-| Inventory Below Reorder | 11 / 56 SKUs | COUNT(below_reorder=1) | Target: 0 | Supply chain alert |
-
----
-
-##  Store Performance Analysis
-
-**Best Performing Store:** DS_Hyderabad_Hitech
-- Lowest SLA breach rate: 62.4%
-- Lowest stockout rate: 14.4%
-- Highest average turnover rate: 9.14 (fastest inventory velocity)
-- Only 1 category below reorder point
-
-**Highest Risk Store:** DS_Pune_Kothrud
-- Highest order volume: 3,243 orders (12.97% of network)
-- Highest revenue: ₹30.97L — meaning disruptions here have maximum financial impact
-- Highest stockout rate: 15.8%
-- Highest cancellation rate: 6.6%
-- 2 categories below reorder point (Personal Care, Staples)
-
-**Peak Hour Impact:**
-- Peak hours generate 95.2% SLA breach rate vs. 42.4% during off-peak
-- Average fulfillment time during peak: ~39 min vs. ~29 min off-peak
-- This 10-minute gap is entirely driven by pick station bottlenecks
-
----
-
-##  Inventory Analysis
-
-**Network-wide stock summary:**
-- Total SKUs tracked: 56 (8 stores × 7 categories)
-- Below reorder point: 11 (19.6% of all SKUs)
-- Total inventory units across network: 44,378
-
-**Highest risk categories:**
-- Personal Care: 4 stores below reorder; 4,879 total units across network
-- Snacks: 2 stores below reorder; 6,796 units but DS_Delhi_Lajpat and DS_Hyderabad_Hitech critical
-- Staples: 2 stores below reorder; 5,904 units but DS_Bangalore_Koramangala (116 units) and DS_Pune_Kothrud (290 units) are alarmingly low
-
-**Lowest risk categories:**
-- Dairy: 8,199 total units; 0 stores below reorder
-- Frozen: 5,595 units; 0 stores below reorder (despite 63.6% SLA breach — suggesting SLA issue is pick time, not availability)
-
----
-
-##  Tableau Dashboard
-
-Tableau dashboard is currently under development.
-
-Planned dashboards:
-- **Network Operations Overview** — real-time KPI tiles for COO review
-- **Store Comparison Matrix** — side-by-side scorecard for 8 stores
-- **Inventory Risk Heatmap** — 8×7 store-category grid with color-coded reorder flags
-- **Peak Hour Performance Chart** — hourly SLA breach rate trend
-- **City Revenue Map** — geographic revenue distribution
-
-`[Screenshot: Network KPI Dashboard]`
-`[Screenshot: Store Risk Matrix]`
-`[Screenshot: Inventory Heatmap]`
-
----
-
-##  Key Insights
-
-**HIGH IMPACT**
-
-1. **SLA breach crisis:** 62.8% of all 25,000 orders breached SLA. At ₹966 AOV, this means 15,703 customers experienced a late delivery — a potential customer retention risk, not an operational anomaly.
-
-2. **Peak hours collapse fulfillment:** During peak hours, SLA breach rate reaches 95.2% vs. 42.4% off-peak. Peak-hour performance deteriorates significantly during the highest-demand windows, with SLA breach rates increasing to 95.2%.
-
-3. **Pick time is the primary bottleneck:** Average pick time is 7.5 minutes out of a 30-minute SLA. Delivery accounts for 20.3 minutes (62%) of total time but is outside direct store control. Pick time is the only lever available at the store level.
-
-4. **11 store-category SKUs are below reorder:** These represent active stockout risk. DS_Bangalore_Koramangala's Staples stock is 116 units against a max capacity of 686 — critically exposed.
-
-5. **Personal Care is the most vulnerable category:** Highest stockout rate (15.7%), 4 stores below reorder point, and moderate SLA breach (63.5%). A single demand spike could trigger network-wide shortages.
-
-**MEDIUM IMPACT**
-
-6. **SLA breach destroys ratings:** On-time orders average 4.5/5; breached orders average 3.2/5. This 1.3-point gap is directly measurable and predictable — On-time fulfillment appears to be a major driver of customer experience based on observed rating differences.
-
-7. **DS_Mumbai_Andheri leads SLA breaches:** At 63.4%, it is the worst-performing store on SLA. Combined with above-average stockout (15.5%), this store needs immediate operational intervention.
-
-8. **Pune_Kothrud's cancellation rate is the network high at 6.6%:** Cancellations translate directly to lost revenue. At 3,243 orders and 6.6% cancel rate, approximately 214 orders per period are lost after placement.
-
-9. **Delhi and Mumbai together account for ₹1.21 Cr (50.1%) of network revenue:** These two cities should receive first-priority inventory allocation and operational investment.
-
-10. **Frozen category has the second-highest SLA breach rate (63.6%) but zero stores below reorder:** The SLA failure is not an availability issue — it is a pick-time and cold-chain handling issue.
-
-**LOW IMPACT**
-
-11. **Revenue is well-distributed across stores:** Range of ₹29.3L–₹30.97L suggests no single store is carrying disproportionate volume risk.
-
-12. **Average fulfillment time is 32.85 minutes — just 2.85 minutes over a 30-minute SLA target:** The problem is not catastrophic overruns but systematic marginal delays, making small process improvements high-ROI.
-
-13. **Beverages has the worst combined SLA breach (63.7%) and significant stockout risk (2 stores critical):** This category may benefit from pre-positioned secondary stock during peak windows.
-
-14. **DS_Hyderabad_Hitech maintains the highest inventory turnover rate (9.14):** Its fast-moving inventory explains both low stockout rates and relatively better SLA performance — a model for other stores.
-
-15. **Customer rating range is narrow (3.88–3.90 across stores):** The ceiling is low. No store is delivering a meaningfully differentiated experience, which means the entire network has rating improvement headroom.
-
----
-
-##  Strategic Recommendations
-
-| # | Action | Expected Impact | Owner | Priority | Risk |
-|---|---|---|---|---|---|
-| 1 | Emergency reorder for 11 below-reorder store-category SKUs (Personal Care at 4 stores, Beverages at 2 stores, Staples at 2 stores) | Eliminates active stockout risk; could reduce stockout rate from 15.2% to ~10% | Supply Chain / Store Managers | 🔴 Critical | Stock-out between order placement and delivery arrival |
-| 2 | Add dedicated pick station resource at DS_Mumbai_Andheri and DS_Pune_Kothrud during peak hours (defined as 8–10am, 12–2pm, 7–9pm) | Targeted reduction of pick time from 7.5 min to ~5 min; expected to reduce pick times and improve peak-hour SLA performance. | City Operations Manager | 🔴 Critical | Requires headcount approval; short-term cost increase |
-| 3 | Freeze demand growth at DS_Mumbai_Andheri and DS_Pune_Kothrud until operational improvements are confirmed | Prevents SLA collapse under 20% demand growth scenario | Strategy / City Head | 🟠 High | Revenue opportunity cost in short term |
-| 4 | Implement category-specific pick-path optimization for Frozen (63.6% SLA breach) — move Frozen SKUs closer to dispatch area | Potential reduction in pick time through improved SKU placement and shorter picker travel distances. Expected outcome is improved fulfillment efficiency for Frozen-category orders, subject to operational validation. | Store Ops / Layout Manager | 🟠 High | Requires physical relayout; one-time disruption |
-| 5 | Set automated reorder alerts at 130% of reorder point (not 100%) for Personal Care and Beverages network-wide | Earlier trigger prevents stock depletion before next delivery cycle | Supply Chain | 🟠 High | Marginally higher average inventory carrying cost |
-| 6 | Prioritize Mumbai and Delhi for inventory buffer stock build (these cities = 50.1% of network revenue) | Protects revenue concentration; reduces cancellation risk at highest-value nodes | Supply Chain + Finance | 🟡 Medium | Higher warehouse holding cost |
-| 7 | Conduct operational audit at DS_Hyderabad_Hitech to understand why it outperforms peers (62.4% SLA, 14.4% stockout) | Document and replicate best practices network-wide | Head of Operations | 🟡 Medium | Requires 1–2 days of analyst time |
-| 8 | Establish weekly store-level SLA and stockout review cadence with Operations Heads | Creates accountability structure; enables early detection of deteriorating stores | COO / City Ops | 🟢 Ongoing | None — process only |
-
----
-
-##  Operations Improvement Roadmap
-
-### Short-Term (0–3 Months)
-- Emergency reorder of 11 critical store-category SKUs
-- Dedicated peak-hour picker deployment at DS_Mumbai_Andheri and DS_Pune_Kothrud
-- Automated reorder alert system set at 130% of reorder point
-- Weekly KPI review cadence launched for all 8 store managers
-
-### Medium-Term (3–6 Months)
-- Pick-path optimization for Frozen category across all stores
-- DS_Hyderabad_Hitech best-practice playbook development and rollout
-- Tableau live dashboard connected to operational data for daily monitoring
-- City-level inventory buffer policy implemented for Mumbai and Delhi
-
-### Long-Term (6–12 Months)
-Potential future enhancement: ML-based demand forecasting to identify elevated stockout risk and demand surges up to 48 hours in advance.
-- Dynamic SLA window adjustment by time of day and store capacity
-- Network-wide pick-time reduction target of <5 minutes through layout optimization
-- Customer rating recovery program targeting >4.2 network average
-
----
-
-##  Repository Structure
+## 8. Data Architecture
 
 ```
-dark-store-ops-simulator/
+Raw Operational Data (orders, inventory, deliveries)
+            │
+            ▼
+   SQL Diagnostic Layer  ──►  4 production views
+   (validation → KPIs →       (STORE_SCORECARD_VIEW,
+    root cause → views)        EXECUTIVE_KPI_VIEW,
+            │                  STORE_CATEGORY_RISK_VIEW,
+            │                  REVENUE_LOSS_VIEW)
+            ▼
+   Python Analytical Layer
+   NB1 EDA & Data Quality → NB2 Statistical Root-Cause
+   & Costed Recommendations → NB3 Predictive Risk Scoring
+   & Scenario Simulation
+            │
+            ▼
+   Reporting Layer
+   Excel (stakeholder workbook)  +  Tableau (executive dashboard, in progress)
+```
+
+Design intent: SQL owns *diagnosis and validated views*, Python owns *statistical proof and scenario modeling*, Excel/Tableau own *stakeholder consumption*. No layer duplicates another's job.
+
+---
+
+## 9. Technology Stack
+
+| Layer | Tools |
+|---|---|
+| Data Storage & Querying | MySQL |
+| Statistical & Predictive Analysis | Python (pandas, NumPy, statsmodels, scikit-learn, SciPy) |
+| Visualization (analysis) | Matplotlib, Seaborn |
+| Business Reporting | Microsoft Excel (pivot-based scorecards, executive dashboard) |
+| Executive Dashboard | Tableau *(in progress)* |
+| Version Control | Git / GitHub |
+
+---
+
+## 10. SQL Analysis
+
+`sql/dark_store_ops.sql` (908 lines) is organized as a 12-section diagnostic build, each with a stated business goal and business questions answered before the code:
+
+1. **Database Setup** — table existence and row-count sanity checks
+2. **Data Validation & Data Quality** — duplicate orders, orphaned store-category references, inventory records where stock exceeds capacity, missing/non-positive revenue
+3. **Executive Business Snapshot** — single-query network KPI dashboard
+4. **Order & Revenue Intelligence** — revenue by city, category, and month
+5. **Store Performance Intelligence** — full store scorecard (orders, revenue, SLA, stockout, cancel, rating)
+6. **Inventory & Stockout Intelligence** — category risk, reorder-point breaches, store-category combinations needing emergency replenishment
+7. **Revenue Loss & Risk Intelligence** — revenue lost vs. at-risk, broken down by exact cause (stockout only / cancelled only / both)
+8. **Peak-Hour & Staffing Intelligence** — peak vs. off-peak stress comparison, a picker-staffing priority score
+9. **Cost & Profitability Intelligence** — a transparent, documented cost-to-serve proxy and contribution margin by store (built from operational cost drivers since neither source table carries a direct cost field — swappable for finance-confirmed unit costs)
+10. **Advanced Analytics & AI Model Inputs** — a statistically-flagged high-risk store dataset (mean + 1 standard deviation threshold), a daily demand dataset for forecasting, and a peak-demand-vs-capacity dataset
+11. **Demand Scenario & Capacity Planning** — a +20% demand projection by store, translated into projected peak-hour pressure
+12. **Diagnostics & Executive Recommendations** — a `CASE`-driven root-cause classifier per store-category, a prioritized per-store recommendation engine, and a weekly trend snapshot for monitoring drift
+
+**Reusable views** (Section 12) package the four most-queried outputs — `STORE_SCORECARD_VIEW`, `EXECUTIVE_KPI_VIEW`, `STORE_CATEGORY_RISK_VIEW`, `REVENUE_LOSS_VIEW` — so BI tools can consume clean, pre-aggregated data without re-deriving logic.
+
+---
+
+## 11. Python Analysis
+
+Three notebooks, each with a distinct job — deliberately not three notebooks doing the same EDA three ways.
+
+**`01_EDA_and_Business_Health.ipynb`** — Data trust and business shape.
+Data quality checks (missing values, duplicates, referential integrity, cross-file join feasibility), a Python-vs-SQL KPI cross-check (so the two codebases are proven to agree before either is trusted), distribution analysis, city/category/store performance breakdowns, a fulfillment pipeline stage breakdown, peak vs. off-peak comparison, and a correlation heatmap across KPIs. Closes with a 10-finding data-derived executive summary.
+
+**`02_Operations_Analytics.ipynb`** — Root cause and ROI.
+Replaces an assumed 50/30/20 risk-score weighting with evidence-derived weights (~92/5/3) after showing SLA breach dominates customer rating impact by two independent methods; runs a Monte Carlo stress test (2,000 trials) on store rankings to separate robust flags from noise; runs chi-square tests showing store-level differences in SLA/stockout/cancellation are *not* statistically significant (p > 0.4) — reframing the fix from store-specific to network-wide; fits a logistic regression showing peak-hour status has ~150x the standardized effect of any staffing variable on SLA breach (AUC 0.77); cross-validates rule-based and k-means store segmentation (75% agreement); and produces a costed, prioritized recommendation engine that includes a lever with negative ROI at scale.
+
+**`03_Executive_Insights_and_Scenario_Analysis.ipynb`** — Prediction and scenario planning.
+Builds a weighted composite store risk score with explicitly documented business-priority weights; runs a non-ML 7-day moving average demand forecast with day-of-week/hour-of-day seasonality; fits a logistic regression to predict stockouts *before* they happen using only pre-order information; runs a +20%/−20% demand stress test with stated methodology; builds a capacity planning model translating projected order volume into additional staff required; and closes with an executive KPI simulator and a full cost/benefit/ROI/payback business case generator.
+
+Methodological choices — cost-proxy construction, SLA definition cross-checks, non-ML forecasting rationale — are stated in-notebook and expanded in [`docs/Analysis_Methodology.md`](docs/Analysis_Methodology.md).
+
+---
+
+## 12. Excel Dashboard
+
+`excel/Dark_Store_Operations_Simulator.xlsx` is the stakeholder-facing companion to the SQL/Python analysis: a raw `Orders` data sheet (25,000 rows), a `KPI` summary sheet, `Store Performance` and `Store_Scorecard` sheets, `City Analysis` and `Category Analysis` breakdowns, an `Inventory Analysis` sheet, and a one-page `Executive Dashboard` sheet designed to be read in under a minute — mirroring the SQL `EXECUTIVE_KPI_VIEW` and `STORE_SCORECARD_VIEW` outputs so a non-technical stakeholder gets the same numbers without opening a query tool.
+
+---
+
+## 13. Tableau Dashboard
+
+**Status: In Progress.**
+
+A Tableau executive dashboard is being built on top of the SQL views (`EXECUTIVE_KPI_VIEW`, `STORE_SCORECARD_VIEW`, `STORE_CATEGORY_RISK_VIEW`) to give leadership a live, filterable version of the Excel Executive Dashboard sheet — store-level drill-down, city/category filters, and a revenue-loss waterfall. Screenshots and a published workbook link will be added here on completion.
+
+---
+
+## 14. Operational KPI Framework
+
+| KPI | Definition | Why It Matters |
+|---|---|---|
+| SLA Breach Rate | % of orders exceeding the 30-minute fulfillment window | Primary service-quality metric; directly correlated with customer rating (r = -0.51) |
+| Stockout Rate | % of orders affected by a stocked-out item | Leading indicator of lost/cancelled revenue |
+| Cancellation Rate | % of orders cancelled | Realized revenue loss |
+| Revenue Fully Lost | Revenue from orders with *both* a stockout and cancellation | The number that's already gone |
+| Revenue At Risk | Revenue from orders with an SLA breach that survived (not cancelled/stocked out) | The number that predicts *future* churn if unaddressed |
+| Cost-to-Serve Proxy | Operational cost estimate from SLA penalty + stockout rework + cancellation waste + fulfillment-time labor | Store profitability, pending finance-confirmed unit costs |
+| Contribution Margin Proxy | Revenue − Cost-to-Serve Proxy | Store-level profitability ranking |
+| Capacity Utilization | Current stock ÷ max capacity | Inventory risk and replenishment prioritization |
+| Risk Score | Weighted composite of SLA breach, stockout, and cancellation rate | Store investment prioritization (weights are evidence-derived, not assumed) |
+
+Full definitions and calculation logic: [`docs/Operational_KPI_Definitions.md`](docs/Operational_KPI_Definitions.md).
+
+---
+
+## 15. Analytical Methodology
+
+The analysis deliberately follows a **validate → describe → diagnose → predict → simulate** progression rather than jumping straight to conclusions:
+
+1. **Validate** — no KPI is reported until the underlying data passes duplicate, referential-integrity, and range checks (SQL Section 1 / Notebook 1 §4), and Python-derived KPIs are cross-checked against SQL-derived KPIs for agreement.
+2. **Describe** — distribution analysis and city/category/store breakdowns establish *what* is happening before *why* is investigated.
+3. **Diagnose** — statistical tests (chi-square for store-level significance, logistic regression for driver attribution, correlation analysis for SLA-rating linkage) separate real effects from noise, replacing assumed risk-score weights with evidence-derived ones.
+4. **Predict** — a logistic regression flags high-stockout-risk orders pre-emptively; a non-ML seasonal moving average forecasts demand without overfitting to a small dataset.
+5. **Simulate** — a +20%/−20% demand stress test and a capacity planning model translate diagnosis into a forward-looking, costed investment plan.
+
+Full methodology, including every stated assumption: [`docs/Analysis_Methodology.md`](docs/Analysis_Methodology.md).
+
+---
+
+## 16. Business Insights
+
+- **SLA breach (62.8% overall) is a peak-hour capacity problem, not a store-management problem.** Peak-hour breach rate (95.2%) dwarfs off-peak (42.4%), and store-level differences in SLA/stockout/cancellation are not statistically significant (chi-square, p > 0.4 across all 8 stores).
+- **Reliability, not order value, drives customer satisfaction.** Customer rating correlates negatively with SLA breach (r = -0.51); delivery distance independently correlates with SLA risk (r = 0.71) in the separate deliveries dataset — two independent data sources point the same direction.
+- **Failures compound, they don't add.** Orders with both a stockout and an SLA breach cancel at a materially higher rate than orders with either issue alone.
+- **The "revenue lost" number understates urgency.** Only 6.1% of revenue is directly lost to cancellation today, but 61.3% of revenue is attached to a degraded (breached or stocked-out) order — the number that should drive investment urgency.
+- **Delivery is the single slowest pipeline stage** (avg. 20.3 minutes), making it the highest-leverage target for process improvement ahead of picking or packing.
+- **Inventory root-cause analysis is currently inconclusive by data design, not by a dead end** — `below_reorder` is a single point-in-time snapshot with ~zero measurable relationship to a full year of stockouts; this is flagged as a data-collection gap, not a finding to act on yet.
+
+---
+
+## 17. Operational Bottlenecks
+
+| Bottleneck | Evidence | Consequence |
+|---|---|---|
+| Peak-hour staffing capacity | 95.2% peak SLA breach vs. 42.4% off-peak; peak-hour status has ~150x the standardized effect on breach vs. any staffing variable (AUC 0.77) | Majority of network SLA failure concentrated in predictable demand windows |
+| Delivery stage duration | Highest average time of any pipeline stage (20.3 min) | Largest single lever for cutting total fulfillment time |
+| Store-category inventory gaps | 11 store-category combinations below reorder point | Localized stockout risk that pooled inventory can't solve |
+| Inventory snapshot timing | Single point-in-time `below_reorder` flag vs. year-long order data | Blocks a statistically defensible inventory root-cause conclusion |
+| Personal Care category | Highest revenue loss from stockouts of any category | Concentrated, addressable reorder-point fix |
+
+---
+
+## 18. Executive Recommendations
+
+Every recommendation below is costed and, where the data supports it, ROI-tested — including the one rejected at current scope.
+
+1. **Approve: Inventory buffer top-up, network-wide.** ₹94,240 one-time cost to clear all 11 below-reorder store-category gaps, against ₹1.47M in stockout-driven revenue loss. Modeled ROI: **+178.9%, 4.3-month payback.** The only lever in this dataset with a clean, positive, revenue-justified ROI — recommend immediate approval.
+2. **Pilot, don't scale: Peak-hour staffing at the top 2 statistically-flagged high-risk stores** (DS_Mumbai_Andheri, DS_Pune_Kothrud). Network-wide staffing shows a strongly-evidenced root cause but a **negative ROI (~₹45L cost vs. ~₹18K transaction-only benefit)** under conservative accounting. Recommend a 2-store pilot to capture real before/after data rather than a network rollout.
+3. **Fix the inventory data-collection gap.** Move `below_reorder` from a single snapshot to daily instrumentation — a low-cost engineering fix that unblocks a currently-inconclusive but high-priority root-cause question.
+4. **Prioritize Personal Care reorder points first** — the category with the highest revenue loss concentration from stockouts.
+5. **Commission a customer lifetime value / churn model on the 61.3% "at-risk" revenue segment** before making a network-wide staffing decision — the analysis identifies this as the single highest-leverage next step, likely to flip the staffing lever's ROI from negative to positive.
+6. **Plan for +20% demand growth now.** At +20% demand, SLA breach would rise to 74.0% and the network would need approximately 77 additional peak-hour workers — a growth-readiness gap to close before, not after, a demand surge.
+
+---
+
+## 19. Operational Impact
+
+If the inventory buffer recommendation alone is funded, the model projects recovery of a meaningful share of the ₹1.47M currently lost to stockouts at a 4.3-month payback — the fastest, lowest-risk win available in the dataset. Fixing the inventory snapshot-timing gap has a second-order impact: it converts an "inconclusive" root cause into a defensible one, unlocking further investment decisions in future analysis cycles. Piloting (rather than fully funding) peak-hour staffing avoids a ~₹45L commitment to a lever that the data does not yet support at full network scale — itself a protective operational outcome.
+
+---
+
+## 20. Business Value
+
+This project demonstrates the operational discipline a business actually needs from an analytics function: distinguishing signal from noise (chi-square testing before attributing blame to specific stores), separating revenue *already lost* from revenue *at risk* (a distinction that changes urgency framing), and being willing to recommend against a well-evidenced lever when the ROI math doesn't support it yet. The value isn't the dashboard — it's the discipline behind which numbers are trusted enough to act on.
+
+---
+
+## 21. Folder Structure
+
+```
+dark-store-operations-simulator/
 │
 ├── README.md
-│
-├── data/
-│   ├── orders.csv
-│   └── inventory.csv
-│
-├── excel/
-│   └── Dark_Store_Ops_Simulator.xlsx
-│
 ├── sql/
-│   └── dark_store_queries.sql
-│
+│   └── dark_store_ops.sql
 ├── notebooks/
-│   ├── 01_EDA_Business_Health.ipynb
+│   ├── 01_EDA_and_Business_Health.ipynb
 │   ├── 02_Operations_Analytics.ipynb
-│   └── 03_Executive_Insights_Scenario.ipynb
-│
-├── outputs/
+│   └── 03_Executive_Insights_and_Scenario_Analysis.ipynb
+├── excel/
+│   └── Dark_Store_Operations_Simulator.xlsx
+├── tableau/
+│   └── (in progress)
+├── screenshots/
+│   ├── executive_dashboard.png
 │   ├── store_scorecard.png
-│   ├── sla_breach_by_store.png
-│   ├── fulfillment_stage_breakdown.png
-│   ├── inventory_risk_matrix.png
-│   └── peak_hour_performance.png
-│
-└── tableau/
-    └── [Dashboard in progress]
+│   └── sql_views.png
+├── data/
+│   └── (data dictionary reference — raw data not published; see docs/Data_Dictionary.md)
+└── docs/
+    ├── Executive_Summary.md
+    ├── Business_Problem.md
+    ├── Operations_Requirements.md
+    ├── Data_Dictionary.md
+    ├── Analysis_Methodology.md
+    ├── Operational_KPI_Definitions.md
+    ├── Business_Insights.md
+    ├── Executive_Recommendations.md
+    ├── Technical_Documentation.md
+    └── Presentation_Guide.md
 ```
+
 ---
-MIT License — free to use, adapt, and reference with attribution.
+
+## 22. Repository Structure Notes
+
+The repository is intentionally organized by **analytical layer** (SQL → Python → Excel/Tableau), not by role or audience. Each layer's README section links to its actual file so a reviewer can go from claim to code in one click. The `/docs` folder holds detail that would otherwise bloat this README — it expands on, and never duplicates, what's written here.
+
 ---
 
-Project by Sumit Kumar Gupta
+## 23. Key Skills Demonstrated
 
-[LinkedIn](https://www.linkedin.com/in/sumitgupta-analyst/)
+**Business & Operations Analysis:** root-cause diagnosis, KPI framework design, operational bottleneck identification, capacity planning
+**Strategy & Decision Support:** costed recommendation-building, ROI/payback modeling, scenario stress-testing, investment prioritization
+**Data Analytics:** SQL (window logic, views, multi-table joins, CASE-based classification), Python (pandas, statsmodels, scikit-learn), statistical testing (chi-square, logistic regression, correlation), data quality validation
+**Executive Communication:** translating statistical findings into plain-language, decision-ready recommendations; presenting a negative result honestly rather than hiding it
 
-[GitHub](https://github.com/Sumit-kr-Gupta)
+---
+
+## 24. Challenges & Assumptions
+
+- **No direct cost field exists in the source data.** Cost-to-serve and contribution margin use a transparent, documented cost proxy (SLA breach penalty + stockout rework + cancellation waste + fulfillment-time labor) built from operational cost drivers already present in the data. This is explicitly flagged as swappable for finance-confirmed unit costs — not presented as a precise financial figure.
+- **`below_reorder` is a single point-in-time inventory snapshot** against a full year of order-level stockout data, which limits how conclusively inventory can be root-caused. This is treated as a data-collection gap to fix, not glossed over as a finding.
+- **The stockout prediction model (ROC-AUC 0.57) is a modest, not strong, classifier** — reported honestly as directionally useful for flagging risk, not as a production-grade prediction system.
+- **The staffing ROI figure uses conservative, transaction-only benefit accounting** and does not monetize customer retention or lifetime value — which is exactly why a CLV/churn model is recommended as the next analytical priority rather than assuming the ROI is understated.
+- **The +20%/−20% demand scenario is a linear scaling model**, not a full discrete-event simulation — appropriate for directional capacity planning, stated explicitly as a simplification.
+
+---
+
+## 25. Future Enhancements
+
+- Complete and publish the Tableau executive dashboard on top of the existing SQL views.
+- Instrument daily (not single-snapshot) inventory data to unblock a statistically defensible stockout root-cause model.
+- Build the recommended customer lifetime value / churn model on the at-risk revenue segment to re-test the staffing investment ROI.
+- Replace the operational cost proxy with finance-confirmed unit costs once available.
+- Extend the demand scenario model from linear scaling to a discrete-event simulation for more granular capacity planning.
+
+---
+
+## 26. Screenshots
+
+*(To be added: Executive Dashboard (Excel), Store Scorecard, SQL view outputs, Tableau dashboard on completion.)*
+
+---
+
+## 27. How to Run This Project
+
+**SQL**
+```bash
+mysql -u <user> -p < sql/dark_store_ops.sql
+```
+Requires a MySQL instance with `orders` and `inventory` tables loaded per the schema in `docs/Data_Dictionary.md`.
+
+**Python Notebooks**
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn statsmodels scipy
+jupyter notebook notebooks/01_EDA_and_Business_Health.ipynb
+```
+Run notebooks in order (01 → 02 → 03) — each builds on datasets and findings from the previous one.
+
+**Excel**
+Open `excel/Dark_Store_Operations_Simulator.xlsx` directly; no setup required.
+
+---
+
+## 28. Conclusion
+
+This project treats "analysis" as a discipline with a burden of proof, not a set of charts. Every headline number here is validated before it's trusted, every recommendation is costed, and one recommendation is explicitly *not* funded at full scale because the ROI math doesn't support it yet. That's the operating standard the project is built to demonstrate.
+
+---
+
+## 29. Relevant Roles
+
+This project's structure naturally maps to several functions, without being built to chase any one of them:
+
+- **Business Analysis / BI:** the SQL diagnostic layer, KPI framework, and Excel stakeholder reporting reflect standard BA/BI deliverables end to end.
+- **Operations Analytics:** root-cause diagnosis, bottleneck identification, and capacity/staffing modeling are the core of the project.
+- **Strategy & Operations / Founder's Office:** the scenario stress-test, costed recommendation engine, and willingness to reject a low-ROI lever mirror how a strategy or founder's-office analyst is expected to protect capital allocation.
+- **Consulting:** the validate → diagnose → recommend structure, explicit assumptions, and executive-summary framing follow a standard consulting deliverable pattern.
+- **Data Analytics:** the statistical rigor (chi-square testing, logistic regression, predictive modeling) sits underneath every business claim in the project.
+
+---
+
+*Questions, feedback, or interested in a walkthrough? Open an issue or reach out — happy to talk through any part of the methodology.*
